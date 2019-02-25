@@ -3,9 +3,7 @@ package com.liupan.netty.chat.server;
 import com.liupan.netty.chat.codec.PacketDecoder;
 import com.liupan.netty.chat.codec.PacketEncoder;
 import com.liupan.netty.chat.codec.Spliter;
-import com.liupan.netty.chat.server.handler.AuthHandler;
-import com.liupan.netty.chat.server.handler.LoginRequestHandler;
-import com.liupan.netty.chat.server.handler.MessageRequestHandler;
+import com.liupan.netty.chat.server.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -38,6 +36,8 @@ public class NettyServer {
                         ch.pipeline().addLast(new LoginRequestHandler());
                         ch.pipeline().addLast(new AuthHandler());
                         ch.pipeline().addLast(new MessageRequestHandler());
+                        ch.pipeline().addLast(new CreateGroupRequestHandler());
+                        ch.pipeline().addLast(new LogoutRequestHandler());
                         ch.pipeline().addLast(new PacketEncoder());
                     }
                 });

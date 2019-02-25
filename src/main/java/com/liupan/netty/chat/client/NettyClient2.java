@@ -1,9 +1,15 @@
 package com.liupan.netty.chat.client;
+
+
+import com.liupan.netty.chat.client.handler.CreateGroupResponseHandler;
 import com.liupan.netty.chat.client.handler.LoginResponseHandler;
+import com.liupan.netty.chat.client.handler.LogoutResponseHandler;
 import com.liupan.netty.chat.client.handler.MessageResponseHandler;
 import com.liupan.netty.chat.codec.PacketDecoder;
 import com.liupan.netty.chat.codec.PacketEncoder;
 import com.liupan.netty.chat.codec.Spliter;
+import com.liupan.netty.chat.console.ConsoleCommandManager;
+import com.liupan.netty.chat.console.LoginConsoleCommand;
 import com.liupan.netty.chat.protocol.request.LoginRequestPacket;
 import com.liupan.netty.chat.protocol.request.MessageRequestPacket;
 import com.liupan.netty.chat.util.SessionUtil;
@@ -46,7 +52,9 @@ public class NettyClient2 {
                         ch.pipeline().addLast(new Spliter());
                         ch.pipeline().addLast(new PacketDecoder());
                         ch.pipeline().addLast(new LoginResponseHandler());
+                        ch.pipeline().addLast(new LogoutResponseHandler());
                         ch.pipeline().addLast(new MessageResponseHandler());
+                        ch.pipeline().addLast(new CreateGroupResponseHandler());
                         ch.pipeline().addLast(new PacketEncoder());
                     }
                 });
@@ -75,37 +83,18 @@ public class NettyClient2 {
     }
 
     private static void startConsoleThread(Channel channel) {
-        Scanner sc = new Scanner(System.in);
-        LoginRequestPacket loginRequestPacket = new LoginRequestPacket();
+        ConsoleCommandManager consoleCommandManager = new ConsoleCommandManager();
+        LoginConsoleCommand loginConsoleCommand = new LoginConsoleCommand();
+        Scanner scanner = new Scanner(System.in);
 
         new Thread(() -> {
             while (!Thread.interrupted()) {
                 if (!SessionUtil.hasLogin(channel)) {
-                    System.out.print("未登录,输入用户名登录: ");
-                    String username = sc.nextLine();
-                    loginRequestPacket.setUserName(username);
-
-                    // 密码使用默认的
-                    loginRequestPacket.setPassword("pwd");
-
-                    // 发送登录数据包
-                    channel.writeAndFlush(loginRequestPacket);
-                    waitForLoginResponse();
+                    loginConsoleCommand.exec(scanner, channel);
                 } else {
-                    System.out.print("已登录，发送单聊消息: ");
-                    String toUserId = sc.next();
-                    String message = sc.next();
-                    channel.writeAndFlush(new MessageRequestPacket(toUserId, message));
+                    consoleCommandManager.exec(scanner, channel);
                 }
             }
         }).start();
-    }
-
-
-    private static void waitForLoginResponse() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {
-        }
     }
 }
